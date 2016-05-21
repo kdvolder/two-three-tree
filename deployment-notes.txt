@@ -1,0 +1,2 @@
+The process followed for deploying is described in this link:
+http://central.sonatype.org/pages/apache-maven.html
