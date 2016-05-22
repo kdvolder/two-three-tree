@@ -106,8 +106,11 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 	//   - execute some asserts to make sure the code doesn't break the 'equal depths' invariant
 	//   - easily determine if a tree has grown.
 	// However it should not be necessary to track the depth. All that would be needed is for a
-	// internal 'put' operation to somehow return a boolean alongside the resulting tree to
-	// indicate whether the new tree's depth has grown.
+	// internal 'put/remove' operation to somehow return a boolean alongside the resulting tree to
+	// indicate whether the new tree's depth has changed.
+
+	// 2) Remove 'redundant' internal keys
+	//   See the method TTTreeTest.checkForRedundantInternalKeys
 
 	@Override
 	public abstract String toString();
@@ -125,7 +128,7 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	private static final TTTree EMPTY_TREE = new TTTree() {
-		@Override public TTTree put(Comparable k, Object v) { return leaf(k, v);}
+		@Override public TTTree put(Comparable k, Object v) { return leaf(k, v); }
 		@Override Leaf getEntry(Comparable key) { return null; }
 		@Override public String toString() { return "EMPTY"; }
 		@Override public boolean isEmpty() { return true; }
@@ -134,6 +137,7 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		@Override int size() { return 0; }
 		@Override void dump(int indent) {print(indent, this);}
 		@Override public TTTree remove(Comparable k) {return this; }
+		@Override public void accept(TTTreeVisitor visitor) { visitor.visit_empty(); }
 	};
 
 	/**
@@ -225,6 +229,11 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		@Override
 		public String toString() {
 			return "["+k+" = "+v+"]";
+		}
+
+		@Override
+		public void accept(TTTreeVisitor<K, V> visitor) {
+			visitor.visit_leaf(k, v);
 		}
 	};
 
@@ -365,6 +374,10 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		@Override
 		public String toString() {
 			return "Node2["+depth+"]("+k+")";
+		}
+		@Override
+		public void accept(TTTreeVisitor<K, V> visitor) {
+			visitor.visit_2node(l, k, r);
 		}
 
 	}
@@ -591,6 +604,11 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		public String toString() {
 			return "Node3["+depth+"]("+k1+", "+k2+")";
 		}
+
+		@Override
+		public void accept(TTTreeVisitor<K, V> visitor) {
+			visitor.visit_3node(l, k1, m, k2, r);
+		}
 	}
 
 	private class TTTreeIterator implements Iterator<Entry<K, V>> {
@@ -627,4 +645,8 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		}
 	}
 
+	/**
+	 * Useful to perform various traversals / analysis on the tree.
+	 */
+	public abstract void accept(TTTreeVisitor<K, V> visitor);
 }
