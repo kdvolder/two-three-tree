@@ -1,7 +1,9 @@
 Two-Three Tree
 ==============
 
-Implementation of a persistent, immutable key-value store.
+[![Build Status](https://travis-ci.org/kdvolder/two-three-tree.svg?branch=master)](https://travis-ci.org/kdvolder/two-three-tree)
+
+Implementation of a immutable key-value store.
 
 The store is immutable. This means that adding/removing a 
 key-value pair doesn't alter the store but instead creates a 
