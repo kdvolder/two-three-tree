@@ -1,11 +1,11 @@
 package com.github.kdvolder.tttree;
 
 import java.util.AbstractSet;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Stack;
 
@@ -13,7 +13,7 @@ import com.github.kdvolder.util.Assert;
 import com.google.common.collect.Iterators;
 
 public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map.Entry<K, V>>{
-	
+
 	////////////////////////////////////
 	// public api
 	////////////////////////////////////
@@ -31,10 +31,13 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		}
 		return null;
 	}
+
+	public abstract TTTree<K, V> remove(K k);
+
 	public boolean isEmpty() {
 		return false; // good default because most nodes aren't empty.
 	}
-	
+
 	@Override
 	public Iterator<Entry<K, V>> iterator() {
 		if (isEmpty()) {
@@ -42,11 +45,11 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		}
 		return new TTTreeIterator(this);
 	}
-	
+
 	public Set<K> keySet() {
 		return new AbstractSet<K>() {
 			private Integer size;
-			
+
 			@SuppressWarnings("unchecked")
 			@Override
 			public boolean contains(Object o) {
@@ -77,7 +80,7 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 	}
 
 	abstract Leaf<K, V> getEntry(K key);
-	
+
 	/**
 	 * Counts the elements in the {@link TTTree}.
 	 * <p>
@@ -92,15 +95,12 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		dump(0);
 	}
 
-	
-	//TODO: public abstract TTTree<K, V> remove(K k); 
-	
 	/////////////////////////////////////
-	// implementation 
+	// implementation
 	/////////////////////////////////////
 
 	//Some possible optimization to consider in future:
-	
+
 	// 1) Can we avoid storing/computing 'depth' in each node?
 	// It is nice to have the depth for now to:
 	//   - execute some asserts to make sure the code doesn't break the 'equal depths' invariant
@@ -109,12 +109,13 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 	// internal 'put' operation to somehow return a boolean alongside the resulting tree to
 	// indicate whether the new tree's depth has grown.
 
+	@Override
+	public abstract String toString();
 	protected static final TTTree<?,?>[] NO_CHILDREN = {};
 	abstract void dump(int indent);
 	abstract TTTree<K, V>[] getChildren();
-	abstract void collectKeys(Collection<K> keys);
 	abstract int depth();
-	
+
 	void print(int indent, Object msg) {
 		for (int i = 0; i < indent; i++) {
 			System.out.print("  ");
@@ -131,8 +132,8 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		@Override TTTree[] getChildren() { return NO_CHILDREN; }
 		@Override int depth() { return 0; }
 		@Override int size() { return 0; }
-		@Override void collectKeys(Collection keys) {}
 		@Override void dump(int indent) {print(indent, this);}
+		@Override public TTTree remove(Comparable k) {return this; }
 	};
 
 	/**
@@ -141,16 +142,24 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 	private static <K extends Comparable<K>, V> TTTree<K, V> leaf(K k, V v) {
 		return new Leaf<K,V>(k, v);
 	}
-	
+
 	private static class Leaf<K extends Comparable<K>, V> extends TTTree<K, V> implements Map.Entry<K, V> {
-		
+
 		private final K k;
 		private final V v;
-		
+
 		Leaf(K k, V v) {
 			super();
 			this.k = k;
 			this.v = v;
+		}
+
+		@Override
+		Leaf<K, V> getEntry(K key) {
+			if (key.equals(k)) {
+				return this;
+			}
+			return null;
 		}
 
 		@Override
@@ -170,15 +179,16 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		}
 
 		@Override
-		protected int depth() {
-			//Depth should be the same as that of empty tree, because
-			//Empty tree is also a kind of leaf node.
-			return 0;
+		public TTTree<K, V> remove(K fk) {
+			if (fk.equals(k)) {
+				return empty();
+			}
+			return this;
 		}
 
 		@Override
-		protected void collectKeys(Collection<K> keys) {
-			keys.add(k);
+		protected int depth() {
+			return 1;
 		}
 
 		@Override
@@ -213,11 +223,8 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		}
 
 		@Override
-		Leaf<K, V> getEntry(K key) {
-			if (key.equals(k)) {
-				return this;
-			}
-			return null;
+		public String toString() {
+			return "["+k+" = "+v+"]";
 		}
 	};
 
@@ -226,7 +233,7 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		private final K k;
 		private final TTTree<K, V> r;
 		private int depth;
-		
+
 		Node2(TTTree<K, V> l, K k, TTTree<K, V> r) {
 			Assert.isLegalState(l.depth()==r.depth());
 			this.depth = l.depth()+1;
@@ -234,6 +241,7 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 			this.k = k;
 			this.r = r;
 		}
+		@Override
 		public TTTree<K, V> put(K ik, V iv) {
 			int c = ik.compareTo(k);
 			if (c<=0) {
@@ -266,6 +274,62 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		}
 
 		@Override
+		public TTTree<K, V> remove(K fk) {
+			int c = fk.compareTo(k);
+			if (c<=0) {
+				// fk <= k
+				TTTree<K, V> l = this.l.remove(fk);
+				if (this.l==l) {
+					return this; //Avoid needless copying if tree is unchanged
+				} else if (this.l.depth()==l.depth()) {
+					return new Node2<>(l, k, r);
+				} else {
+					//l.depth shrunk
+					if (r instanceof Node2) {
+						Node2<K,V> r = (Node2<K, V>) this.r;
+						return new Node3<>(l, k, r.l, r.k, r.r);
+					} else if (r instanceof Node3) {
+						Node3<K,V> r = (Node3<K, V>) this.r;
+						return new Node2<>(
+								new Node2<>(l, k, r.l),
+								r.k1,
+								new Node2<>(r.m, r.k2, r.r)
+						);
+					} else {
+						Assert.isLegalState(r instanceof Leaf);
+						Assert.isLegalState(l.isEmpty());
+						return r;
+					}
+				}
+			} else {
+				// fk > k
+				TTTree<K, V> r = this.r.remove(fk);
+				if (this.r==r) {
+					return this; //Avoid needless copying if tree is unchanged
+				} else if (this.r.depth()==r.depth()) {
+					return new Node2<>(l, k, r);
+				} else {
+					//r.depth shrunk
+					if (l instanceof Node2) {
+						Node2<K,V> l = (Node2<K, V>) this.l;
+						return new Node3<>(l.l, l.k, l.r, k, r);
+					} else if (l instanceof Node3) {
+						Node3<K,V> l = (Node3<K, V>) this.l;
+						return new Node2<>(
+								new Node2<>(l.l, l.k1, l.m),
+								l.k2,
+								new Node2<>(l.r, k, r)
+						);
+					} else {
+						Assert.isLegalState(l instanceof Leaf);
+						Assert.isLegalState(r.isEmpty());
+						return l;
+					}
+				}
+			}
+		}
+
+		@Override
 		public Leaf<K,V> getEntry(K fk) {
 			int c = fk.compareTo(k);
 			if (c<=0) {
@@ -281,11 +345,7 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		protected int depth() {
 			return depth;
 		}
-		@Override
-		protected void collectKeys(Collection<K> keys) {
-			l.collectKeys(keys);
-			r.collectKeys(keys);
-		}
+
 		@Override
 		void dump(int indent) {
 			l.dump(indent+1);
@@ -301,8 +361,14 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		int size() {
 			return l.size() + r.size();
 		}
+
+		@Override
+		public String toString() {
+			return "Node2["+depth+"]("+k+")";
+		}
+
 	}
-	
+
 	private static class Node3<K extends Comparable<K>, V> extends TTTree<K, V> {
 
 		private int depth;
@@ -312,7 +378,7 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		final TTTree<K, V> m;
 		final K k2;
 		final TTTree<K, V> r;
-		
+
 		public Node3(TTTree<K, V> l, K k1, TTTree<K, V> m, K k2, TTTree<K, V> r) {
 			Assert.isLegalState(l.depth()==m.depth());
 			Assert.isLegalState(l.depth()==r.depth());
@@ -334,7 +400,7 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 					//The tree has just grown
 					//split ourself into a new Node2.
 					return new Node2<>(
-							l, 
+							l,
 							k1,
 							new Node2<>(m, k2, r)
 					);
@@ -354,7 +420,7 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 						TTTree<K, V> ml = ((Node2<K,V>)m).l;
 						TTTree<K, V> mr = ((Node2<K,V>)m).r;
 						return new Node2<>(
-								new Node2<>(l, k1, ml), 
+								new Node2<>(l, k1, ml),
 								mk,
 								new Node2<>(mr, k2, r)
 						);
@@ -369,13 +435,110 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 						//The tree has just grown
 						//split ourself into a new Node2.
 						return new Node2<>(
-								new Node2<>(l, k1, m), 
+								new Node2<>(l, k1, m),
 								k2,
 								r
 						);
 					} else {
 						//Tree remained same size
 						return new Node3<>(l, k1, m, k2, r);
+					}
+				}
+			}
+		}
+
+		@Override
+		public TTTree<K, V> remove(K fk) {
+			int c = fk.compareTo(k1);
+			if (c<=0) {
+				//fk <= k1
+				TTTree<K, V> l = this.l.remove(fk);
+				if (l==this.l) {
+					return this;
+				} else if (l.depth()==this.l.depth()) {
+					return new Node3<>(l, k1 ,m, k2, r);
+				} else {
+					//shrunk l
+					if (l.isEmpty()) {
+						return new Node2<>(m, k2, r);
+					} else if (m instanceof Node2) {
+						Node2<K, V> m = (Node2<K, V>) this.m;
+						return new Node2<>(
+							new Node3<>(l, k1, m.l, m.k, m.r),
+							k2,
+							r
+						);
+					} else { //m instanceof Node3
+						Node3<K, V> m = (Node3<K, V>) this.m;
+						return new Node3<>(
+							new Node2<>(l, k1, m.l),
+							m.k1,
+							new Node2<>(m.m, m.k2, m.r),
+							k2,
+							r
+						);
+					}
+				}
+			} else {
+				//k1 < fk
+				c = fk.compareTo(k2);
+				if (c<=0) {
+					//k1 < fk <= k2
+					TTTree<K, V> m = this.m.remove(fk);
+					if (m==this.m) {
+						return this;
+					} else if (m.depth()==this.m.depth()) {
+						return new Node3<>(l, k1, m, k2, r);
+					} else {
+						//shrunk
+						if (m.isEmpty()) {
+							return new Node2<>(l, k1, r);
+						} else if (l instanceof Node2) {
+							Node2<K,V> l = (Node2<K, V>) this.l;
+							return new Node2<>(
+								new Node3<>(l.l, l.k, l.r, k1, m),
+								k2,
+								r
+							);
+						} else { //l instanceof Node3
+							Node3<K,V> l = (Node3<K, V>) this.l;
+							return new Node3<>(
+								new Node2<>(l.l, l.k1, l.m),
+								l.k2,
+								new Node2<>(l.r, k1, m),
+								k2,
+								r
+							);
+						}
+					}
+				} else {
+					//k2 < fk
+					TTTree<K, V> r = this.r.remove(fk);
+					if (r==this.r) {
+						return this;
+					} else if (r.depth()==this.r.depth()) {
+						return new Node3<>(l, k1, m, k2, r);
+					} else {
+						//shrunk
+						if (r.isEmpty()) {
+							return new Node2<>(l, k1, m);
+						} else if (m instanceof Node2) {
+							Node2<K,V> m = (Node2<K,V>)this.m;
+							return new Node2<>(
+								l,
+								k1,
+								new Node3<>(m.l, m.k, m.r, k2, r)
+							);
+						} else { //m instanceof Node3
+							Node3<K,V> m = (Node3<K, V>) this.m;
+							return new Node3<>(
+								l,
+								k1,
+								new Node2<>(m.l, m.k1, m.m),
+								m.k2,
+								new Node2<>(m.r, k2, r)
+							);
+						}
 					}
 				}
 			}
@@ -391,7 +554,7 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 				// k1 < k
 				c = k.compareTo(k2);
 				if (c<=0) {
-					//k1 < k <= k2 
+					//k1 < k <= k2
 					return m.getEntry(k);
 				} else {
 					//k2 < k
@@ -406,13 +569,6 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		}
 
 		@Override
-		protected void collectKeys(Collection<K> keys) {
-			r.collectKeys(keys);
-			m.collectKeys(keys);
-			l.collectKeys(keys);
-		}
-
-		@Override
 		void dump(int indent) {
 			l.dump(indent+1);
 			print(indent, k1);
@@ -420,7 +576,7 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 			print(indent, k2);
 			r.dump(indent+1);
 		}
-		
+
 		@SuppressWarnings("unchecked")
 		@Override
 		TTTree<K, V>[] getChildren() {
@@ -430,12 +586,17 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		int size() {
 			return l.size() + m.size() + r.size();
 		}
+
+		@Override
+		public String toString() {
+			return "Node3["+depth+"]("+k1+", "+k2+")";
+		}
 	}
-	
+
 	private class TTTreeIterator implements Iterator<Entry<K, V>> {
-		
+
 		Stack<TTTree<K, V>> stack = new Stack<>();
-		
+
 		TTTreeIterator(TTTree<K, V> tree) {
 			if (!tree.isEmpty())
 			stack.push(tree);
@@ -443,7 +604,7 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 
 		@Override
 		public boolean hasNext() {
-			return !stack.isEmpty(); 
+			return !stack.isEmpty();
 		}
 
 		@Override
@@ -462,7 +623,7 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 					}
 				}
 			}
-			throw new IllegalStateException("calling next, but there are no more elements");
+			throw new NoSuchElementException();
 		}
 	}
 
