@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -116,32 +117,41 @@ public class TTTreeTest {
 			for (int j = 0; j < ITERATIONS; j++) {
 				Integer key = keys[j];
 				remove(key);
+				//TODO: maintain this invariant to save memory
+				//checkForRedundantInternalKeys(tree);
 			}
 			assertTrue(tree.isEmpty());
 		}
 	}
 
-	@Test
-	public void frozenData() throws Exception {
-		put(60, "66");
-		put(58, "14");
-		put(31, "71");
-		put(23, "2");
-		put(12, "14");
-		put(33, "65");
-		put(87, "21");
-		put(66, "9");
-		put(59, "69");
-		put(76, "7");
-		put(52, "40");
-		put(24, "6");
-		put(77, "25");
-		put(51, "63");
-		put(25, "43");
-		put(33, "55");
-		put(85, "47");
-		remove(52);
-		remove(31);
+	public static void checkForRedundantInternalKeys(TTTree<Integer,String> tree) {
+		//Look for internal keys that are not at the same time also used in a leaf.
+		//These keys are redundant in the sense that they could be replaced by a existing leaf's key
+		//this might save memory (the key can then be garbage collected)
+		class MyVisitor extends TTTreeVisitor<Integer, String> {
+			Set<Integer> internalKeys = new HashSet<>();
+			Set<Integer> externalKeys = new HashSet<>();
+			@Override
+			public void visit_internal_key(Integer k) {
+				internalKeys.add(k);
+			}
+			@Override
+			public void visit_leaf(Integer k, String v) {
+				externalKeys.add(k);
+			}
+			public void checkConstraint() {
+				if (externalKeys.containsAll(internalKeys)) {
+					return;
+				}
+				//There are some internalkeys that don't correspond to a key used in a leaf!
+				internalKeys.removeAll(externalKeys);
+				throw new IllegalStateException("Redundant internal keys found: "+internalKeys);
+			}
+		};
+
+		MyVisitor visitor = new MyVisitor();
+		tree.accept(visitor);
+		visitor.checkConstraint();
 	}
 
 	private void shuffle(Integer[] data) {
