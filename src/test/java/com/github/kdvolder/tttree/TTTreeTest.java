@@ -1,11 +1,16 @@
 package com.github.kdvolder.tttree;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 
 import org.junit.Test;
 
@@ -26,6 +31,39 @@ public class TTTreeTest {
 	public void emptySetHasNoKeys() {
 		TTTree<String, String> tree = TTTree.empty();
 		assertEquals(ImmutableSet.of(), tree.keySet());
+	}
+
+	@Test
+	public void emptySetIterator() {
+		Iterator<Entry<String, String>> iter = TTTree.<String,String>empty().iterator();
+		assertFalse(iter.hasNext());
+	}
+
+	@Test
+	public void singletonIterator() {
+		TTTree<String,String> tree = TTTree.empty();
+		tree = tree.put("Hello", "World");
+		Iterator<Entry<String, String>> iter = tree.iterator();
+		
+		assertTrue(iter.hasNext());
+		
+		Entry<String, String> element = iter.next();
+		assertEquals("Hello", element.getKey());
+		assertEquals("World", element.getValue());
+		
+		assertFalse(iter.hasNext());
+	}
+
+	@Test
+	public void singletonKeyset() {
+		TTTree<String,String> tree = TTTree.empty();
+		tree = tree.put("Hello", "World");
+
+		Set<String> keys = tree.keySet();
+		assertTrue(keys.contains("Hello"));
+		assertEquals(1, keys.size());
+		
+		assertEquals(ImmutableSet.of("Hello"), keys);
 	}
 
 	@Test

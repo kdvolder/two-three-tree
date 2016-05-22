@@ -1,12 +1,18 @@
 package com.github.kdvolder.tttree;
 
+import java.util.AbstractSet;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.Stack;
 
 import com.github.kdvolder.util.Assert;
+import com.google.common.collect.Iterators;
 
-public abstract class TTTree<K extends Comparable<K>, V> {
+public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map.Entry<K, V>>{
 	
 	////////////////////////////////////
 	// public api
@@ -18,15 +24,66 @@ public abstract class TTTree<K extends Comparable<K>, V> {
 	}
 
 	public abstract TTTree<K, V> put(K k, V v);
-	public abstract V get(K k);
+	public final V get(K k) {
+		Leaf<K, V> e = getEntry(k);
+		if (e!=null) {
+			return e.getValue();
+		}
+		return null;
+	}
+	public boolean isEmpty() {
+		return false; // good default because most nodes aren't empty.
+	}
+	
+	@Override
+	public Iterator<Entry<K, V>> iterator() {
+		if (isEmpty()) {
+			Collections.emptyIterator();
+		}
+		return new TTTreeIterator(this);
+	}
 	
 	public Set<K> keySet() {
-		//TODO: implement this without actually dumping all the keys into a newly created set.
-		// The TTTree itself should be able to be used as data structure to represent the set
-		HashSet<K> keys = new HashSet<>();
-		collectKeys(keys);
-		return keys;
+		return new AbstractSet<K>() {
+			private Integer size;
+			
+			@SuppressWarnings("unchecked")
+			@Override
+			public boolean contains(Object o) {
+				if (o instanceof Comparable) {
+					return TTTree.this.containsKey((K)o);
+				}
+				return false;
+			}
+
+			@Override
+			public Iterator<K> iterator() {
+				Iterator<Entry<K, V>> entries = TTTree.this.iterator();
+				return Iterators.transform(entries, Map.Entry::getKey);
+			}
+
+			@Override
+			public int size() {
+				if (size==null) {
+					this.size = TTTree.this.size();
+				}
+				return size;
+			}
+		};
 	}
+
+	public final boolean containsKey(K key) {
+		return getEntry(key)!=null;
+	}
+
+	abstract Leaf<K, V> getEntry(K key);
+	
+	/**
+	 * Counts the elements in the {@link TTTree}.
+	 * <p>
+	 * WARNING: not cached... so O(n) operation.
+	 */
+	abstract int size();
 
 	/**
 	 * For debugging. Dump tree structure in indented format onto sysout
@@ -52,26 +109,29 @@ public abstract class TTTree<K extends Comparable<K>, V> {
 	// internal 'put' operation to somehow return a boolean alongside the resulting tree to
 	// indicate whether the new tree's depth has grown.
 
+	protected static final TTTree<?,?>[] NO_CHILDREN = {};
 	abstract void dump(int indent);
+	abstract TTTree<K, V>[] getChildren();
+	abstract void collectKeys(Collection<K> keys);
+	abstract int depth();
 	
-	protected void print(int indent, Object msg) {
+	void print(int indent, Object msg) {
 		for (int i = 0; i < indent; i++) {
 			System.out.print("  ");
 		}
 		System.out.println(msg);
 	}
 
-	protected abstract void collectKeys(Collection<K> keys);
-
-	protected abstract int depth();
-
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	private static final TTTree EMPTY_TREE = new TTTree() {
 		@Override public TTTree put(Comparable k, Object v) { return leaf(k, v);}
-		@Override protected int depth() { return 0; }
-		@Override public Object get(Comparable k) { return null; }
+		@Override Leaf getEntry(Comparable key) { return null; }
 		@Override public String toString() { return "EMPTY"; }
-		@Override protected void collectKeys(Collection keys) {}
+		@Override public boolean isEmpty() { return true; }
+		@Override TTTree[] getChildren() { return NO_CHILDREN; }
+		@Override int depth() { return 0; }
+		@Override int size() { return 0; }
+		@Override void collectKeys(Collection keys) {}
 		@Override void dump(int indent) {print(indent, this);}
 	};
 
@@ -82,7 +142,7 @@ public abstract class TTTree<K extends Comparable<K>, V> {
 		return new Leaf<K,V>(k, v);
 	}
 	
-	private static class Leaf<K extends Comparable<K>, V> extends TTTree<K, V> {
+	private static class Leaf<K extends Comparable<K>, V> extends TTTree<K, V> implements Map.Entry<K, V> {
 		
 		private final K k;
 		private final V v;
@@ -110,14 +170,6 @@ public abstract class TTTree<K extends Comparable<K>, V> {
 		}
 
 		@Override
-		public V get(K fk) {
-			if (k.equals(fk)) {
-				return v;
-			}
-			return null;
-		}
-
-		@Override
 		protected int depth() {
 			//Depth should be the same as that of empty tree, because
 			//Empty tree is also a kind of leaf node.
@@ -132,6 +184,40 @@ public abstract class TTTree<K extends Comparable<K>, V> {
 		@Override
 		void dump(int indent) {
 			print(indent, k + " = " +v);
+		}
+
+		@Override
+		public K getKey() {
+			return k;
+		}
+
+		@Override
+		public V getValue() {
+			return v;
+		}
+
+		@Override
+		public V setValue(V value) {
+			throw new UnsupportedOperationException("setValue");
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		TTTree<K, V>[] getChildren() {
+			return (TTTree<K, V>[]) NO_CHILDREN;
+		}
+
+		@Override
+		int size() {
+			return 1;
+		}
+
+		@Override
+		Leaf<K, V> getEntry(K key) {
+			if (key.equals(k)) {
+				return this;
+			}
+			return null;
 		}
 	};
 
@@ -180,14 +266,14 @@ public abstract class TTTree<K extends Comparable<K>, V> {
 		}
 
 		@Override
-		public V get(K fk) {
+		public Leaf<K,V> getEntry(K fk) {
 			int c = fk.compareTo(k);
 			if (c<=0) {
 				// fk <= k
-				return l.get(fk);
+				return l.getEntry(fk);
 			} else {
 				// fk > k
-				return r.get(fk);
+				return r.getEntry(fk);
 			}
 		}
 
@@ -205,6 +291,15 @@ public abstract class TTTree<K extends Comparable<K>, V> {
 			l.dump(indent+1);
 			print(indent, k);
 			r.dump(indent+1);
+		}
+		@SuppressWarnings("unchecked")
+		@Override
+		TTTree<K, V>[] getChildren() {
+			return new TTTree[] {l, r};
+		}
+		@Override
+		int size() {
+			return l.size() + r.size();
 		}
 	}
 	
@@ -287,20 +382,20 @@ public abstract class TTTree<K extends Comparable<K>, V> {
 		}
 
 		@Override
-		public V get(K k) {
+		public Leaf<K, V> getEntry(K k) {
 			int c = k.compareTo(k1);
 			if (c<=0) {
 				//k <= k1
-				return l.get(k);
+				return l.getEntry(k);
 			} else {
 				// k1 < k
 				c = k.compareTo(k2);
 				if (c<=0) {
 					//k1 < k <= k2 
-					return m.get(k);
+					return m.getEntry(k);
 				} else {
 					//k2 < k
-					return r.get(k);
+					return r.getEntry(k);
 				}
 			}
 		}
@@ -324,6 +419,50 @@ public abstract class TTTree<K extends Comparable<K>, V> {
 			m.dump(indent+1);
 			print(indent, k2);
 			r.dump(indent+1);
+		}
+		
+		@SuppressWarnings("unchecked")
+		@Override
+		TTTree<K, V>[] getChildren() {
+			return new TTTree[] {l, m, r};
+		}
+		@Override
+		int size() {
+			return l.size() + m.size() + r.size();
+		}
+	}
+	
+	private class TTTreeIterator implements Iterator<Entry<K, V>> {
+		
+		Stack<TTTree<K, V>> stack = new Stack<>();
+		
+		TTTreeIterator(TTTree<K, V> tree) {
+			if (!tree.isEmpty())
+			stack.push(tree);
+		}
+
+		@Override
+		public boolean hasNext() {
+			return !stack.isEmpty(); 
+		}
+
+		@Override
+		public Entry<K, V> next() {
+			while(!stack.isEmpty()) {
+				TTTree<K,V> node = stack.pop();
+				if (node instanceof Leaf) {
+					return (Leaf<K,V>)node;
+				} else {
+					TTTree<K, V>[] children = node.getChildren();
+					for (int i = children.length-1; i >= 0; i--) {
+						TTTree<K, V> c = children[i];
+						if (!c.isEmpty()) {
+							stack.push(children[i]);
+						}
+					}
+				}
+			}
+			throw new IllegalStateException("calling next, but there are no more elements");
 		}
 	}
 
