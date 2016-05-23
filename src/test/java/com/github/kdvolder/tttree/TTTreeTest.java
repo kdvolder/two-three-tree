@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
@@ -129,6 +130,7 @@ public class TTTreeTest {
 	}
 
 	@Test
+	@Ignore
 	public void performanceTestTTTreeMapVsGoogleImmutableSortedMap() {
 		int WORKLOAD_SIZE = 100_000;
 		int MAP_SIZES[] = { 1, 10, 100, 1_000 /*, 10_000*/ };
@@ -173,6 +175,7 @@ public class TTTreeTest {
 	}
 
 	@Test
+	@Ignore
 	public void performanceAccessingTest() {
 		int WORKLOAD_SIZE = 100_000_000;
 		int MAP_SIZES[] = { 1, 10, 100, 1_000, 10_000, 100_000 };
