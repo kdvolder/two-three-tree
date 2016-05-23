@@ -16,12 +16,12 @@ Roughly speaking the operation will end up making copies
 only of nodes along a path from the tree's root down to the
 inserted/deleted leaf. So the amount of copying is O(log(n)).
 
-Why not use Google Guava?
-=========================
+Why not use Google Guava ?
+==========================
 
-Google's wonderful Guava library provides `ImmutableMap` 
-and `ImmutableSortedMap` implementations. So why not
-just use that instead?
+Google's wonderful Guava library is great. I love it. It 
+provides `ImmutableMap` and `ImmutableSortedMap` 
+implementations. So why not just use that instead?
 
 The answer is, it depends on what you wanted to use it for.
 
@@ -35,9 +35,9 @@ It also performs pretty well when you need to make identical
 copies of this map (essentially an identical copy is free).
 
 However, it performs rather poorly when you are interested 
-in making modified copies of a map. Essentially making a
-modified copy implies pretty much 'rebuilding' the map 
-again with a small change to its contents. So its performance
+in making *modified* copies of a map. Essentially making a
+modified copy implies 'rebuilding' the whole map 
+with a small change to its contents. So its performance
 is O(n) in both time and space.
 
 In contrast, TTTree makes modified copy of a map in O(log(n)).
@@ -65,8 +65,21 @@ The price you pay for this spectacular speedup is this:
    reversed if you need to keep both original map and modified versions of
    the map in memory at the same time.
    
- - access times are comparable (both are log(n)) but I would expect Guava's
-   ImmutableSortedMap to have a bit of an edge in raw access speed. I've done
-   some test runs but the results are bit too 'noisy'. Some runs it looks 
-   like TTTree is actually faster and others it looks like Guava is the 
-   clear winner. A more rigorous test might give more conclusive results.
+
+What about access times? A bit surprising, but access times especially for 
+smaller sized maps upto 10_000 entries are very comparable between Guava and 
+TTTree. Upwards of that Guava seems to gain a significant edge (better 
+cache locality due to its compact array-based representation?). 
+
+The table below shows time taken in seconds, to perform 100,000,000 
+`.get` calls on maps of different sizes.
+
+|    Size | TTTree |    Guava |
+|--------:|-------:|---------:|
+|       1 |  0.358 |    0.595 |
+|      10 |  1.514 |    2.445 |
+|     100 |  2.381 |    3.091 |
+|    1000 |  8.031 |    8.103 |
+|   10000 | 14.725 |   11.449 |
+|  100000 | 31.194 |   18.412 |
+

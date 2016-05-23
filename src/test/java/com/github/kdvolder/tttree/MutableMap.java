@@ -1,5 +1,7 @@
 package com.github.kdvolder.tttree;
 
+import java.util.Set;
+
 import com.google.common.collect.ImmutableSortedMap;
 
 /**
@@ -21,6 +23,7 @@ public abstract class MutableMap<K extends Comparable<K>, V> {
 	public abstract void put(K k, V v);
 	public abstract V get(K k);
 	public abstract void remove(K k);
+	public abstract Set<K> keySet();
 
 	public static <K extends Comparable<K>, V> MutableMap<K, V> from(ImmutableSortedMap<K, V> _map) {
 		return new MutableMap<K, V>() {
@@ -46,6 +49,11 @@ public abstract class MutableMap<K extends Comparable<K>, V> {
 					.putAll(map.tailMap(k, false))
 					.build();
 			}
+
+			@Override
+			public Set<K> keySet() {
+				return map.keySet();
+			}
 		};
 	}
 
@@ -66,7 +74,11 @@ public abstract class MutableMap<K extends Comparable<K>, V> {
 			public void remove(K k) {
 				map = map.remove(k);
 			}
+
+			@Override
+			public Set<K> keySet() {
+				return map.keySet();
+			}
 		};
 	}
-
 }

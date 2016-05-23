@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.ImmutableSortedMap.Builder;
 
 public class TTTreeTest {
 
@@ -171,6 +172,46 @@ public class TTTreeTest {
 		summarizeMeasurements();
 	}
 
+	@Test
+	public void performanceAccessingTest() {
+		int WORKLOAD_SIZE = 100_000_000;
+		int MAP_SIZES[] = { 1, 10, 100, 1_000, 10_000, 100_000 };
+		for (int MAP_SIZE : MAP_SIZES) {
+			Integer[] keys = randomInts(MAP_SIZE);
+			int ITERATIONS = WORKLOAD_SIZE / MAP_SIZE;
+			assertEquals(ITERATIONS*MAP_SIZE,WORKLOAD_SIZE);
+			doNoisy(() -> {
+				println("===== TTTree SIZE = "+MAP_SIZE);
+				TTTree<Integer, Integer> tree = TTTree.empty();
+				MutableMap<Integer, Integer> map = MutableMap.from(tree);
+				for (Integer key : keys) {
+					map.put(key, key);
+				}
+				doAccessTest(keys, map, ITERATIONS, MAP_SIZE);
+			});
+			doNoisy(() -> {
+				println("===== GOOGLE SIZE = "+MAP_SIZE);
+				Builder<Integer, Integer> imap = ImmutableSortedMap.naturalOrder();
+				for (Integer key : keys) {
+					imap = imap.put(key, key);
+				}
+				MutableMap<Integer, Integer> map = MutableMap.from(imap.build());
+				doAccessTest(keys, map, ITERATIONS, MAP_SIZE);
+			});
+		}
+	}
+
+	private void doAccessTest(Integer[] keys, MutableMap<Integer, Integer> map, int ITERATIONS, int MAP_SIZE) {
+		measure(0, "accessing", () -> {
+			for (int iteration = 0; iteration < ITERATIONS; iteration++) {
+				for (Integer key : keys) {
+					map.get(key);
+				}
+			}
+		});
+		summarizeMeasurements();
+	}
+
 	private void doNoisy(Runnable body) {
 		boolean wasNoisy = NOISY;
 		NOISY = true;
@@ -189,8 +230,10 @@ public class TTTreeTest {
 			println(type +  ": " + seconds(time = measurements.get(type)));
 			totalTime += time;
 		}
-		println("----------------------------------------");
-		println("total : "+seconds(totalTime));
+		if (measurements.keySet().size()>1) {
+			println("----------------------------------------");
+			println("total : "+seconds(totalTime));
+		}
 	}
 
 	private void measure(int iter, String testType, Runnable body) {
