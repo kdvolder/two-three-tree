@@ -129,23 +129,27 @@ public class TTTreeTest {
 
 	@Test
 	public void performanceTestTTTreeMapVsGoogleImmutableSortedMap() {
-		doNoisy(() -> {
-			println("===== TTTree base map ====");
-			TTTree<Integer, Integer> tree = TTTree.empty();
-			MutableMap<Integer, Integer> map = MutableMap.from(tree);
-			doPerformanceTest(map);
-		});
-		doNoisy(() -> {
-			println("===== GOOGLE ImmutableSortedMap ====");
-			ImmutableSortedMap<Integer, Integer> imap = ImmutableSortedMap.of();
-			MutableMap<Integer, Integer> map = MutableMap.from(imap);
-			doPerformanceTest(map);
-		});
+		int WORKLOAD_SIZE = 1_000_000;
+		int MAP_SIZES[] = { 1, 10, 100, 1_000, 10_000 };
+		for (int MAP_SIZE : MAP_SIZES) {
+			int ITERATIONS = WORKLOAD_SIZE / MAP_SIZE;
+			assertEquals(ITERATIONS*MAP_SIZE,WORKLOAD_SIZE);
+			doNoisy(() -> {
+				println("===== TTTree SIZE = "+MAP_SIZE);
+				TTTree<Integer, Integer> tree = TTTree.empty();
+				MutableMap<Integer, Integer> map = MutableMap.from(tree);
+				doPerformanceTest(map, ITERATIONS, MAP_SIZE);
+			});
+			doNoisy(() -> {
+				println("===== GOOGLE SIZE = "+MAP_SIZE);
+				ImmutableSortedMap<Integer, Integer> imap = ImmutableSortedMap.of();
+				MutableMap<Integer, Integer> map = MutableMap.from(imap);
+				doPerformanceTest(map, ITERATIONS, MAP_SIZE);
+			});
+		}
 	}
 
-	private void doPerformanceTest(MutableMap<Integer, Integer> map) {
-		int MAP_SIZE = 1_000;
-		int ITERATIONS = 100;
+	private void doPerformanceTest(MutableMap<Integer, Integer> map, int ITERATIONS, int MAP_SIZE) {
 		Integer[] keys = randomInts(MAP_SIZE);
 		for (int iteration = 0; iteration < ITERATIONS; iteration++) {
 			measure(iteration, "inserting", () -> {
@@ -187,7 +191,6 @@ public class TTTreeTest {
 		}
 		println("----------------------------------------");
 		println("total : "+seconds(totalTime));
-		println("========================================");
 	}
 
 	private void measure(int iter, String testType, Runnable body) {
