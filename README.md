@@ -65,23 +65,8 @@ The price you pay for this spectacular speedup is this:
    reversed if you need to keep both original map and modified versions of
    the map in memory at the same time.
    
- - access times are comparable both are log(n) but Guava's
-   ImmutableSortedMap probably has an edge in raw access speed. I've done
-   some test runs but   I'll probably need to devise a more rigourous comparison 
-   as the one I threw together quickly, the time measurements are probably 
-   a bit sloppy and 'noisy'. Some runs it looks like TTTree is faster and
-   others it looks like Guava is the clear winner.
- 
-For whatever its worth the table below shows the time in seconds to
-peform 1_000_000 'get' calls on a table of different sizes in the sloppy 
-test code I have available now.
-
-|    Size | TTTree |    Guava |
-|--------:|-------:|---------:|
-|       1 |  0.026 |    0.024 |
-|      10 |  0.013 |    0.035 |
-|     100 |  0.037 |    0.060 |
-|    1000 |  0.098 |    0.112 |
-|   10000 |  0.162 |    0.141 |
-
-  
+ - access times are comparable (both are log(n)) but I would expect Guava's
+   ImmutableSortedMap to have a bit of an edge in raw access speed. I've done
+   some test runs but the results are bit too 'noisy'. Some runs it looks 
+   like TTTree is actually faster and others it looks like Guava is the 
+   clear winner. A more rigorous test might give more conclusive results.
