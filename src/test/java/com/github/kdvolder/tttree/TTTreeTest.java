@@ -129,7 +129,7 @@ public class TTTreeTest {
 
 	@Test
 	public void performanceTestTTTreeMapVsGoogleImmutableSortedMap() {
-		int WORKLOAD_SIZE = 1_000_000;
+		int WORKLOAD_SIZE = 100_000;
 		int MAP_SIZES[] = { 1, 10, 100, 1_000 /*, 10_000*/ };
 		for (int MAP_SIZE : MAP_SIZES) {
 			int ITERATIONS = WORKLOAD_SIZE / MAP_SIZE;
