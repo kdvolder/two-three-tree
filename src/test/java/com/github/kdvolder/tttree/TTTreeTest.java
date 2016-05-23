@@ -16,6 +16,7 @@ import java.util.Set;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 
 public class TTTreeTest {
 
@@ -32,6 +33,8 @@ public class TTTreeTest {
 
 	private TTTree<Integer, String> tree = TTTree.empty();
 	private Map<Integer, String> shadowMap = new HashMap<>();
+
+	private Map<String, Long> measurements = new HashMap<>();
 
 	@Test
 	public void emptySetHasNoKeys() {
@@ -122,6 +125,93 @@ public class TTTreeTest {
 			}
 			assertTrue(tree.isEmpty());
 		}
+	}
+
+	@Test
+	public void performanceTestTTTreeMapVsGoogleImmutableSortedMap() {
+		doNoisy(() -> {
+			println("===== TTTree base map ====");
+			TTTree<Integer, Integer> tree = TTTree.empty();
+			MutableMap<Integer, Integer> map = MutableMap.from(tree);
+			doPerformanceTest(map);
+		});
+		doNoisy(() -> {
+			println("===== GOOGLE ImmutableSortedMap ====");
+			MutableMap<Integer, Integer> map = MutableMap.from(ImmutableSortedMap.of());
+			doPerformanceTest(map);
+		});
+	}
+
+	private void doPerformanceTest(MutableMap<Integer, Integer> map) {
+		int MAP_SIZE = 1_000;
+		int ITERATIONS = 100;
+		Integer[] keys = randomInts(MAP_SIZE);
+		for (int iteration = 0; iteration < ITERATIONS; iteration++) {
+			measure(iteration, "inserting", () -> {
+				for (Integer key : keys) {
+					map.put(key, key);
+				}
+			});
+			measure(iteration, "accessing", () -> {
+				for (Integer key : keys) {
+					map.get(key);
+				}
+			});
+			measure(iteration, "removing ", () -> {
+				for (Integer key : keys) {
+					map.remove(key);
+				}
+			});
+		}
+		summarizeMeasurements();
+	}
+
+	private void doNoisy(Runnable body) {
+		boolean wasNoisy = NOISY;
+		NOISY = true;
+		try {
+			body.run();
+		} finally {
+			NOISY = wasNoisy;
+		}
+	}
+
+	private void summarizeMeasurements() {
+//		println("========= performance test summary ======");
+		long totalTime = 0;
+		for (String type : measurements.keySet()) {
+			Long time = 0L;
+			println(type +  ": " + seconds(time = measurements.get(type)));
+			totalTime += time;
+		}
+		println("----------------------------------------");
+		println("total : "+seconds(totalTime));
+		println("========================================");
+	}
+
+	private void measure(int iter, String testType, Runnable body) {
+//		println(">>> "+iter+":"+testType+" ...");
+		long start = System.currentTimeMillis();
+		body.run();
+		long duration = System.currentTimeMillis()-start;
+//		println(">>> "+iter+":"+testType+" took "+seconds(duration));
+		if (iter==0) {
+			measurements.put(testType, duration);
+		} else {
+			measurements.put(testType, measurements.get(testType)+duration);
+		}
+	}
+
+	private String seconds(long duration) {
+		return String.format("%.3f", duration/1000.0)+" s";
+	}
+
+	private Integer[] randomInts(int howMany) {
+		Integer[] data = new Integer[howMany];
+		for (int i = 0; i < data.length; i++) {
+			data[i] = random.nextInt();
+		}
+		return data;
 	}
 
 	public static void checkForRedundantInternalKeys(TTTree<Integer,String> tree) {
