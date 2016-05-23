@@ -13,7 +13,7 @@ creates a copy.
 
 The implementation uses a 2-3-tree and is entirely built
 out of immutable nodes. Creating a copy is implemented 
-efficiently. Most of the original tree's nodes used to 
+efficiently. Most of the original tree's nodes are re-used to 
 build the copy. Roughly speaking the operation will end up 
 making copies only of nodes along a path from the tree's root 
 down to the inserted/deleted leaf. So the amount of copying 
@@ -42,7 +42,7 @@ Lookup entries using `.get()`:
 
 		System.out.println(tree.get("Hello"));
 		
-Remove entries using `.remove()` to create a reduced copy of an exsting map: 
+Remove entries using `.remove()` to create a reduced copy of a map: 
 
 		smallerTree = tree.remove("Hello");
 		
@@ -96,7 +96,7 @@ numbers on that yet, but it's a pretty safe bet :-).
 What about access times? A bit surprising, but access times especially for 
 smaller sized maps upto 10_000 entries are very comparable between Guava and 
 TTTree. Starting at about 10_000 entries my tests showed that Guava is gaining 
-an significant edge over TTTree in raw access speed (better cache 
+a significant edge over TTTree in raw access speed (better cache 
 locality due to its compact array-based representation?). Below 10,000 entries
 access speeds where comparable or even better with TTTree.
 
