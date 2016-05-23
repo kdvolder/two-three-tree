@@ -137,7 +137,8 @@ public class TTTreeTest {
 		});
 		doNoisy(() -> {
 			println("===== GOOGLE ImmutableSortedMap ====");
-			MutableMap<Integer, Integer> map = MutableMap.from(ImmutableSortedMap.of());
+			ImmutableSortedMap<Integer, Integer> imap = ImmutableSortedMap.of();
+			MutableMap<Integer, Integer> map = MutableMap.from(imap);
 			doPerformanceTest(map);
 		});
 	}
