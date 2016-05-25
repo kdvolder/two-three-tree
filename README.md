@@ -89,7 +89,7 @@ inserts in this scenario to build up maps of different sizes.
 |  10,000 |  0.380 |  140.890 |
 
 The price you pay for this spectacular speedup is that a *single* 
-TTTree will probably take significantly more memory than a single
+TTTree will take significantly more memory than a single
 `ImmutableSortedSet` containing the same data. For larger maps,
 on a 64bit VM with compressed oops `ImmutableSortedSet` uses only
 slightly over 8 bytes on average per entry. `TTTree` needs about 50 bytes
