@@ -89,16 +89,18 @@ inserts in this scenario to build up maps of different sizes.
 |  10,000 |  0.380 |  140.890 |
 
 The price you pay for this spectacular speedup is that a *single* 
-TTTree will probably take up quite a bit more memory space than a single
-`ImmutableSortedSet` containing the same data (I haven't gotten 
-numbers on that yet, but it's a pretty safe bet :-).
+TTTree will probably take significantly more memory than a single
+`ImmutableSortedSet` containing the same data. For larger maps,
+on a 64bit VM with compressed oops `ImmutableSortedSet` uses only
+slightly over 8 bytes on average per entry. `TTTree` needs about 50 bytes
+per entry.
 
 What about access times? A bit surprising, but access times especially for 
 smaller sized maps upto 10_000 entries are very comparable between Guava and 
 TTTree. Starting at about 10_000 entries my tests showed that Guava is gaining 
 a significant edge over TTTree in raw access speed (better cache 
-locality due to its compact array-based representation?). Below 10,000 entries
-access speeds where comparable or even better with TTTree.
+locality due to its super-compact array-based representation?). Below 
+10,000 entries access speeds where comparable or even better with TTTree.
 
 The table below shows time taken in seconds, to perform 100,000,000 
 `.get` calls on maps of different sizes.
