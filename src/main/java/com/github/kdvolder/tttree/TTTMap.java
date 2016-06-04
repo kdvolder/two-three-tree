@@ -9,6 +9,10 @@ import java.util.Set;
 /**
  * A {@link TTTMap} wraps a {@link TTTree} adapting it to provide
  * a standard immutable {@link Map} implementation.
+ * <p>
+ * TODO: maybe this wrapper can be avoided if TTTree directly implements / subclasses
+ * from AbstractMap. A potential drawback is that doesn't give us a good place to
+ * cache the 'size' of the map (caching it in every tree node might be wasting space).
  *
  * @author Kris De Volder
  */
@@ -16,6 +20,10 @@ public class TTTMap<K extends Comparable<K>, V> extends AbstractMap<K, V> {
 
 	private TTTree<K, V> map;
 	private int size = -1; //computed the first time it is used.
+
+	public TTTMap() {
+		this(TTTree.empty());
+	}
 
 	public TTTMap(TTTree<K, V> map) {
 		this.map = map;
@@ -43,6 +51,15 @@ public class TTTMap<K extends Comparable<K>, V> extends AbstractMap<K, V> {
 			size = map.size();
 		}
 		return size;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public V get(Object k) {
+		if (k instanceof Comparable) {
+			return map.get((K)k);
+		}
+		return null;
 	}
 
 	/**
@@ -80,5 +97,9 @@ public class TTTMap<K extends Comparable<K>, V> extends AbstractMap<K, V> {
 			return this;
 		}
 		return new TTTMap<>(copy);
+	}
+
+	public void dump() {
+		map.dump();
 	}
 }

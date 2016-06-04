@@ -12,6 +12,16 @@ import java.util.Stack;
 import com.github.kdvolder.util.Assert;
 import com.google.common.collect.Iterators;
 
+/**
+ * A 'map-like' data structure implemented by means of a Two-Three Tree.
+ * <p>
+ * Map-like means, it implements an interface similar to java.util.Map, but it
+ * doesn't formally implement the java.util.Map interface.
+ * <p>
+ * If you don't mind the 'non-standard' interface you can use TTTree directly from
+ * your code. However, if you prefer something that formally implements java.util.Map
+ * you can wrap it in a {@link TTTMap} adapter.
+ */
 public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map.Entry<K, V>>{
 
 	////////////////////////////////////
@@ -144,7 +154,7 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 	 * Create a LEAF node which contains a single key -> value pair.
 	 */
 	private static <K extends Comparable<K>, V> TTTree<K, V> leaf(K k, V v) {
-		return new Leaf<K,V>(k, v);
+		return new Leaf<>(k, v);
 	}
 
 	private static class Leaf<K extends Comparable<K>, V> extends TTTree<K, V> implements Map.Entry<K, V> {
