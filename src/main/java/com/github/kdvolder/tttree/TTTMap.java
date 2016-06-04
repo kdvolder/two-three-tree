@@ -56,7 +56,10 @@ public class TTTMap<K extends Comparable<K>, V> extends AbstractMap<K, V> {
 	@SuppressWarnings("unchecked")
 	@Override
 	public V get(Object k) {
-		if (k instanceof Comparable) {
+		if (k instanceof Comparable<?>) {
+			//This instanceof is not sufficient to make it safe, but
+			//is the best we can do given that all the other type info
+			//is 'erased' at runtime.
 			return map.get((K)k);
 		}
 		return null;
