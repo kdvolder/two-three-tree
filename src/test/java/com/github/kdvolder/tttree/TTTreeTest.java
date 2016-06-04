@@ -10,7 +10,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 
 import org.junit.Ignore;
@@ -20,29 +19,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedMap.Builder;
 
-public class TTTreeTest {
-
-	private boolean NOISY = false;
-	private void println(String string) {
-		if (NOISY) System.out.println(string);
-	}
-
-	/**
-	 * To generate 'random' test data. We fix the seed however so that each test runs the
-	 * same test data, so its not really 'random'.
-	 */
-	private Random random = new Random(12555);
+public class TTTreeTest extends AbstractMapTestTemplate {
 
 	private TTTree<Integer, String> tree = TTTree.empty();
 	private Map<Integer, String> shadowMap = new HashMap<>();
 
 	private Map<String, Long> measurements = new HashMap<>();
-
-	@Test
-	public void emptySetHasNoKeys() {
-		TTTree<String, String> tree = TTTree.empty();
-		assertEquals(ImmutableSet.of(), tree.keySet());
-	}
 
 	@Test
 	public void emptySetIterator() {
@@ -328,4 +310,8 @@ public class TTTreeTest {
 		}
 	}
 
+	@Override
+	protected MutableMap<String, String> createEmptyMap() {
+		return MutableMap.<String,String>from(TTTree.empty());
+	}
 }
