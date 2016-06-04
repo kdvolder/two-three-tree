@@ -1,7 +1,10 @@
-package com.github.kdvolder.tttree;
+package com.github.kdvolder.tttree.test;
 
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.Set;
 
+import com.github.kdvolder.tttree.TTTree;
 import com.google.common.collect.ImmutableSortedMap;
 
 /**
@@ -24,6 +27,9 @@ public abstract class MutableMap<K extends Comparable<K>, V> {
 	public abstract V get(K k);
 	public abstract void remove(K k);
 	public abstract Set<K> keySet();
+	public abstract Iterator<Entry<K, V>> iterator();
+	public abstract void dump();
+	public abstract boolean isEmpty();
 
 	public static <K extends Comparable<K>, V> MutableMap<K, V> from(ImmutableSortedMap<K, V> _map) {
 		return new MutableMap<K, V>() {
@@ -54,8 +60,24 @@ public abstract class MutableMap<K extends Comparable<K>, V> {
 			public Set<K> keySet() {
 				return map.keySet();
 			}
+
+			@Override
+			public Iterator<Entry<K, V>> iterator() {
+				return map.entrySet().iterator();
+			}
+
+			@Override
+			public void dump() {
+				//not implemented don't care.
+			}
+
+			@Override
+			public boolean isEmpty() {
+				return map.isEmpty();
+			}
 		};
 	}
+
 
 	public static <K extends Comparable<K>, V> MutableMap<K, V> from(TTTree<K, V> _map) {
 		return new MutableMap<K, V>() {
@@ -79,6 +101,22 @@ public abstract class MutableMap<K extends Comparable<K>, V> {
 			public Set<K> keySet() {
 				return map.keySet();
 			}
+
+			@Override
+			public Iterator<Entry<K, V>> iterator() {
+				return map.iterator();
+			}
+
+			@Override
+			public void dump() {
+				map.dump();
+			}
+
+			@Override
+			public boolean isEmpty() {
+				return map.isEmpty();
+			}
 		};
 	}
+
 }

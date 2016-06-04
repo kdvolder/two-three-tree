@@ -1,9 +1,10 @@
-package com.github.kdvolder.tttree;
+package com.github.kdvolder.tttree.test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import com.github.kdvolder.tttree.TTTree;
 import com.github.kdvolder.util.ExceptionUtil;
 
 /**

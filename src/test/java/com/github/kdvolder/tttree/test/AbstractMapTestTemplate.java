@@ -1,4 +1,4 @@
-package com.github.kdvolder.tttree;
+package com.github.kdvolder.tttree.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -6,36 +6,88 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 
 import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.ImmutableSortedMap.Builder;
 
-public class TTTreeTest extends AbstractMapTestTemplate {
+public abstract class AbstractMapTestTemplate {
 
-	private TTTree<Integer, String> tree = TTTree.empty();
-	private Map<Integer, String> shadowMap = new HashMap<>();
+	protected boolean NOISY = false;
+	protected void println(String string) {
+		if (NOISY) System.out.println(string);
+	}
 
-	private Map<String, Long> measurements = new HashMap<>();
+	protected MutableMap<Integer, String> testMap = createEmptyMap();
+	protected Map<Integer, String> shadowMap = new HashMap<>();
+
+	protected Map<String, Long> measurements = new HashMap<>();
+
+	/**
+	 * To generate 'random' test data. We fix the seed however so that each test runs the
+	 * same test data, so its not really 'random'.
+	 */
+	protected Random random = new Random(12555);
+
+	@Test
+	public void emptySetHasNoKeys() {
+		MutableMap<String, String> tree = createEmptyMap();
+		assertEquals(ImmutableSet.of(), tree.keySet());
+	}
+
+	protected abstract <K extends Comparable<K>, V> MutableMap<K, V> createEmptyMap();
+
+	protected void assertTreeData(Map<Integer, String> shadowMap, MutableMap<Integer, String> tree) {
+		assertEquals(shadowMap.keySet(), tree.keySet());
+		for (Integer k : shadowMap.keySet()) {
+			assertEquals(shadowMap.get(k), tree.get(k));
+		}
+	}
+
+	protected void shuffle(Integer[] data) {
+		for (int i = 0; i < data.length; i++) {
+			int j = random.nextInt(data.length);
+			Integer bucket = data[i];
+			data[i] = data[j];
+			data[j] = bucket;
+		}
+	}
+
+	protected void remove(Integer key) {
+		println("remove("+key+");");
+		testMap.remove(key);
+		shadowMap.remove(key);
+		println("=====================");
+		if (NOISY) testMap.dump();
+		assertTreeData(shadowMap, testMap);
+	}
+
+	protected void put(int key, String val) {
+		println("put("+key+", \""+val+"\");");
+		testMap.put(key, val);
+		shadowMap.put(key, val);
+		println("=====================");
+		if (NOISY) testMap.dump();
+		assertTreeData(shadowMap, testMap);
+	}
 
 	@Test
 	public void emptySetIterator() {
-		Iterator<Entry<String, String>> iter = TTTree.<String,String>empty().iterator();
+		MutableMap<String, String> map = createEmptyMap();
+		Iterator<Entry<String, String>> iter = map.iterator();
 		assertFalse(iter.hasNext());
 	}
 
 	@Test
 	public void singletonIterator() {
-		TTTree<String,String> tree = TTTree.empty();
-		tree = tree.put("Hello", "World");
+		MutableMap<String,String> tree = createEmptyMap();
+		tree.put("Hello", "World");
 		Iterator<Entry<String, String>> iter = tree.iterator();
 
 		assertTrue(iter.hasNext());
@@ -48,24 +100,24 @@ public class TTTreeTest extends AbstractMapTestTemplate {
 	}
 
 	@Test
-	public void singletonKeyset() {
-		TTTree<String,String> tree = TTTree.empty();
-		tree = tree.put("Hello", "World");
+	public void mapWithOneEntry() {
+		MutableMap<String, String> map = createEmptyMap();
+		map.put("Hello", "World");
+		assertEquals(ImmutableSet.of("Hello"), map.keySet());
+		assertEquals("World", map.get("Hello"));
+		assertNull(map.get("not-present-key"));
+	}
 
-		Set<String> keys = tree.keySet();
+	@Test
+	public void singletonKeyset() {
+		MutableMap<String,String> map = createEmptyMap();
+		map.put("Hello", "World");
+
+		Set<String> keys = map.keySet();
 		assertTrue(keys.contains("Hello"));
 		assertEquals(1, keys.size());
 
 		assertEquals(ImmutableSet.of("Hello"), keys);
-	}
-
-	@Test
-	public void treeWithOneEntry() {
-		TTTree<String, String> tree = TTTree.empty();
-		tree = tree.put("Hello", "World");
-		assertEquals(ImmutableSet.of("Hello"), tree.keySet());
-		assertEquals("World", tree.get("Hello"));
-		assertNull(tree.get("not-present-key"));
 	}
 
 	@Test
@@ -82,7 +134,7 @@ public class TTTreeTest extends AbstractMapTestTemplate {
 			String val = ""+random.nextInt(DATA_RANGE);
 			put(key, val);
 		}
-		assertTreeData(shadowMap, tree);
+		assertTreeData(shadowMap, testMap);
 	}
 
 	@Test
@@ -107,28 +159,21 @@ public class TTTreeTest extends AbstractMapTestTemplate {
 				//TODO: maintain this invariant to save memory
 				//checkForRedundantInternalKeys(tree);
 			}
-			assertTrue(tree.isEmpty());
+			assertTrue(testMap.isEmpty());
 		}
 	}
 
 	@Test
 	@Ignore
-	public void performanceTestTTTreeMapVsGoogleImmutableSortedMap() {
+	public void performanceTest() {
 		int WORKLOAD_SIZE = 100_000;
 		int MAP_SIZES[] = { 1, 10, 100, 1_000 /*, 10_000*/ };
 		for (int MAP_SIZE : MAP_SIZES) {
 			int ITERATIONS = WORKLOAD_SIZE / MAP_SIZE;
 			assertEquals(ITERATIONS*MAP_SIZE,WORKLOAD_SIZE);
 			doNoisy(() -> {
-				println("===== TTTree SIZE = "+MAP_SIZE);
-				TTTree<Integer, Integer> tree = TTTree.empty();
-				MutableMap<Integer, Integer> map = MutableMap.from(tree);
-				doPerformanceTest(map, ITERATIONS, MAP_SIZE);
-			});
-			doNoisy(() -> {
-				println("===== GOOGLE SIZE = "+MAP_SIZE);
-				ImmutableSortedMap<Integer, Integer> imap = ImmutableSortedMap.of();
-				MutableMap<Integer, Integer> map = MutableMap.from(imap);
+				println("===== Map SIZE = "+MAP_SIZE);
+				MutableMap<Integer, Integer> map = createEmptyMap();
 				doPerformanceTest(map, ITERATIONS, MAP_SIZE);
 			});
 		}
@@ -167,20 +212,10 @@ public class TTTreeTest extends AbstractMapTestTemplate {
 			assertEquals(ITERATIONS*MAP_SIZE,WORKLOAD_SIZE);
 			doNoisy(() -> {
 				println("===== TTTree SIZE = "+MAP_SIZE);
-				TTTree<Integer, Integer> tree = TTTree.empty();
-				MutableMap<Integer, Integer> map = MutableMap.from(tree);
+				MutableMap<Integer, Integer> map = createEmptyMap();
 				for (Integer key : keys) {
 					map.put(key, key);
 				}
-				doAccessTest(keys, map, ITERATIONS, MAP_SIZE);
-			});
-			doNoisy(() -> {
-				println("===== GOOGLE SIZE = "+MAP_SIZE);
-				Builder<Integer, Integer> imap = ImmutableSortedMap.naturalOrder();
-				for (Integer key : keys) {
-					imap = imap.put(key, key);
-				}
-				MutableMap<Integer, Integer> map = MutableMap.from(imap.build());
 				doAccessTest(keys, map, ITERATIONS, MAP_SIZE);
 			});
 		}
@@ -246,72 +281,34 @@ public class TTTreeTest extends AbstractMapTestTemplate {
 		return data;
 	}
 
-	public static void checkForRedundantInternalKeys(TTTree<Integer,String> tree) {
-		//Look for internal keys that are not at the same time also used in a leaf.
-		//These keys are redundant in the sense that they could be replaced by a existing leaf's key
-		//this might save memory (the key can then be garbage collected)
-		class MyVisitor extends TTTreeVisitor<Integer, String> {
-			Set<Integer> internalKeys = new HashSet<>();
-			Set<Integer> externalKeys = new HashSet<>();
-			@Override
-			public void visit_internal_key(Integer k) {
-				internalKeys.add(k);
-			}
-			@Override
-			public void visit_leaf(Integer k, String v) {
-				externalKeys.add(k);
-			}
-			public void checkConstraint() {
-				if (externalKeys.containsAll(internalKeys)) {
-					return;
-				}
-				//There are some internalkeys that don't correspond to a key used in a leaf!
-				internalKeys.removeAll(externalKeys);
-				throw new IllegalStateException("Redundant internal keys found: "+internalKeys);
-			}
-		};
+//	public static void checkForRedundantInternalKeys(TTTree<Integer,String> tree) {
+//		//Look for internal keys that are not at the same time also used in a leaf.
+//		//These keys are redundant in the sense that they could be replaced by a existing leaf's key
+//		//this might save memory (the key can then be garbage collected)
+//		class MyVisitor extends TTTreeVisitor<Integer, String> {
+//			Set<Integer> internalKeys = new HashSet<>();
+//			Set<Integer> externalKeys = new HashSet<>();
+//			@Override
+//			public void visit_internal_key(Integer k) {
+//				internalKeys.add(k);
+//			}
+//			@Override
+//			public void visit_leaf(Integer k, String v) {
+//				externalKeys.add(k);
+//			}
+//			public void checkConstraint() {
+//				if (externalKeys.containsAll(internalKeys)) {
+//					return;
+//				}
+//				//There are some internalkeys that don't correspond to a key used in a leaf!
+//				internalKeys.removeAll(externalKeys);
+//				throw new IllegalStateException("Redundant internal keys found: "+internalKeys);
+//			}
+//		};
+//
+//		MyVisitor visitor = new MyVisitor();
+//		tree.accept(visitor);
+//		visitor.checkConstraint();
+//	}
 
-		MyVisitor visitor = new MyVisitor();
-		tree.accept(visitor);
-		visitor.checkConstraint();
-	}
-
-	private void shuffle(Integer[] data) {
-		for (int i = 0; i < data.length; i++) {
-			int j = random.nextInt(data.length);
-			Integer bucket = data[i];
-			data[i] = data[j];
-			data[j] = bucket;
-		}
-	}
-
-	private void remove(Integer key) {
-		println("remove("+key+");");
-		tree = tree.remove(key);
-		shadowMap.remove(key);
-		println("=====================");
-		if (NOISY) tree.dump();
-		assertTreeData(shadowMap, tree);
-	}
-
-	private void put(int key, String val) {
-		println("put("+key+", \""+val+"\");");
-		tree = tree.put(key, val);
-		shadowMap.put(key, val);
-		println("=====================");
-		if (NOISY) tree.dump();
-		assertTreeData(shadowMap, tree);
-	}
-
-	private void assertTreeData(Map<Integer, String> shadowMap, TTTree<Integer, String> tree) {
-		assertEquals(shadowMap.keySet(), tree.keySet());
-		for (Integer k : shadowMap.keySet()) {
-			assertEquals(shadowMap.get(k), tree.get(k));
-		}
-	}
-
-	@Override
-	protected MutableMap<String, String> createEmptyMap() {
-		return MutableMap.<String,String>from(TTTree.empty());
-	}
 }
