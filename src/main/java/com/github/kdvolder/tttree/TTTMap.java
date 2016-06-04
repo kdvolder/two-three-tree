@@ -1,0 +1,84 @@
+package com.github.kdvolder.tttree;
+
+import java.util.AbstractMap;
+import java.util.AbstractSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * A {@link TTTMap} wraps a {@link TTTree} adapting it to provide
+ * a standard immutable {@link Map} implementation.
+ *
+ * @author Kris De Volder
+ */
+public class TTTMap<K extends Comparable<K>, V> extends AbstractMap<K, V> {
+
+	private TTTree<K, V> map;
+	private int size = -1; //computed the first time it is used.
+
+	public TTTMap(TTTree<K, V> map) {
+		this.map = map;
+	}
+
+	@Override
+	public Set<Entry<K, V>> entrySet() {
+		return new AbstractSet<Entry<K,V>>() {
+
+			@Override
+			public Iterator<java.util.Map.Entry<K, V>> iterator() {
+				return map.iterator();
+			}
+
+			@Override
+			public int size() {
+				return TTTMap.this.size();
+			}
+		};
+	}
+
+	@Override
+	public int size() {
+		if (size<0) {
+			size = map.size();
+		}
+		return size;
+	}
+
+	/**
+	 * Make a copy of this map, adding or changing a single key-value association
+	 * in the copy.
+	 * <p>
+	 * If key-value association already exists in this map then no copy is made and
+	 * the returned 'copy' is '==' to the receiver. Callers may use this knowledge
+	 * to test whether the insert made any change to the map. For example:
+	 * <pre>
+	 *    copy = map.insert(key, newValue);
+	 *    if (copy!=map) {
+	 *       mapListeners.notifyChanged(...);
+	 *    }
+	 * </pre>
+	 */
+	public TTTMap<K, V> insert(K k, V v) {
+		TTTree<K, V> copy = map.put(k, v);
+		if (copy==map) {
+			return this;
+		}
+		return new TTTMap<>(copy);
+	}
+
+	/**
+	 * Make a copy of this map, deleting any existing association with a given key.
+	 * <p>
+	 * If the key is not present in this map, then the returned map is guaranteed to
+	 * be identical (in the sense of '=='). Callers can safely use this knowledge to
+	 * determine if the deleted key was presented in the original map.
+	 */
+	public TTTMap<K, V> delete(K k) {
+		TTTree<K, V> copy = map.remove(k);
+		if (copy==map) {
+			return this;
+		}
+		return new TTTMap<>(copy);
+	}
+}
