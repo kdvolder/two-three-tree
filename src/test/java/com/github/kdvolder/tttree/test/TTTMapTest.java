@@ -1,54 +1,71 @@
 package com.github.kdvolder.tttree.test;
 
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Set;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Map;
+
+import org.junit.Test;
 
 import com.github.kdvolder.tttree.TTTMap;
 
 public class TTTMapTest extends AbstractMapTestTemplate {
 
+
+	@Test
+	public void noUnneededCopiesOnInsert() {
+		MutableMap<Integer, String> map = createEmptyMap();
+		map.put(123, "123");
+
+		Map<Integer, String> before = map.asImmutableMap();
+		map.put(123, "123");
+		Map<Integer, String> after = map.asImmutableMap();
+		assertTrue(before==after);
+	}
+
+	@Test
+	public void frozenData() {
+		MutableMap<Integer, String> map = createEmptyMap();
+
+		put(150, "150");
+		put(426, "426");
+
+		Map<Integer, String> before = map.asImmutableMap();
+		put(426, "426");
+		Map<Integer, String> after = map.asImmutableMap();
+
+		assertTrue(before==after);
+	}
+
+	@Test
+	public void noUnneededCopiesOnInsertAndRemove() {
+		doNoisy(() -> {
+			Integer[] data = randomInts(1000, 900);
+			MutableMap<Integer, String> map = createEmptyMap();
+			for (Integer k : data) {
+				println("put("+k+", \""+k+"\");");
+				map.put(k, ""+k);
+
+				Map<Integer, String> before = map.asImmutableMap();
+				map.put(k, ""+k);
+				Map<Integer, String> after = map.asImmutableMap();
+				assertTrue(before==after);
+			}
+
+			for (Integer k : data) {
+				map.remove(k);
+
+				Map<Integer, String> before = map.asImmutableMap();
+				map.remove(k);
+				Map<Integer, String> after = map.asImmutableMap();
+
+				assertTrue(before==after);
+			}
+		});
+	}
+
 	@Override
 	protected <K extends Comparable<K>, V> MutableMap<K, V> createEmptyMap() {
-		return new MutableMap<K, V>() {
-
-			private TTTMap<K, V> map = new TTTMap<>();
-
-			@Override
-			public void put(K k, V v) {
-				map = map.insert(k, v);
-			}
-
-			@Override
-			public V get(K k) {
-				return map.get(k);
-			}
-
-			@Override
-			public void remove(K k) {
-				map = map.delete(k);
-			}
-
-			@Override
-			public Set<K> keySet() {
-				return map.keySet();
-			}
-
-			@Override
-			public Iterator<Entry<K, V>> iterator() {
-				return map.entrySet().iterator();
-			}
-
-			@Override
-			public void dump() {
-				map.dump();
-			}
-
-			@Override
-			public boolean isEmpty() {
-				return map.isEmpty();
-			}
-		};
+		return MutableMap.from(new TTTMap<K,V>());
 	}
 
 }

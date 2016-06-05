@@ -17,7 +17,7 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
 
-public abstract class AbstractMapTestTemplate {
+public abstract class AbstractMapTestTemplate extends RandomTestUtils {
 
 	protected boolean NOISY = false;
 	protected void println(String string) {
@@ -232,7 +232,7 @@ public abstract class AbstractMapTestTemplate {
 		summarizeMeasurements();
 	}
 
-	private void doNoisy(Runnable body) {
+	protected void doNoisy(Runnable body) {
 		boolean wasNoisy = NOISY;
 		NOISY = true;
 		try {
@@ -271,14 +271,6 @@ public abstract class AbstractMapTestTemplate {
 
 	private String seconds(long duration) {
 		return String.format("%.3f", duration/1000.0)+" s";
-	}
-
-	private Integer[] randomInts(int howMany) {
-		Integer[] data = new Integer[howMany];
-		for (int i = 0; i < data.length; i++) {
-			data[i] = random.nextInt();
-		}
-		return data;
 	}
 
 //	public static void checkForRedundantInternalKeys(TTTree<Integer,String> tree) {

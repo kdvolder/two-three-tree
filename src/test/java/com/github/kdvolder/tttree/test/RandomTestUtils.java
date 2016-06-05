@@ -17,4 +17,12 @@ public class RandomTestUtils {
 		}
 		return data;
 	}
+
+	protected Integer[] randomInts(int howMany) {
+		Integer[] data = new Integer[howMany];
+		for (int i = 0; i < data.length; i++) {
+			data[i] = random.nextInt();
+		}
+		return data;
+	}
 }

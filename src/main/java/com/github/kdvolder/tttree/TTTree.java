@@ -272,7 +272,9 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 			if (c<=0) {
 				//ik <= k
 				TTTree<K, V> new_l = l.put(ik, iv);
-				if (new_l.depth()>l.depth()) {
+				if (new_l==l) {
+					return this;
+				} else if (new_l.depth()>l.depth()) {
 					//Since the tree has just grown its root must be Node2
 					K lk = ((Node2<K,V>)new_l).k;
 					TTTree<K, V> ll = ((Node2<K,V>)new_l).l;
@@ -285,7 +287,9 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 			} else {
 				//ik > k
 				TTTree<K, V> new_r = r.put(ik, iv);
-				if (new_r.depth()>r.depth()) {
+				if (new_r==r) {
+					return this;
+				} else if (new_r.depth()>r.depth()) {
 					//Since the tree has just grown its root must be Node2
 					K rk = ((Node2<K,V>)new_r).k;
 					TTTree<K, V> rl = ((Node2<K,V>)new_r).l;
@@ -425,7 +429,9 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 			if (c<=0) {
 				//k <= k1
 				final TTTree<K, V> l = this.l.put(k, v);
-				if (l.depth()>this.l.depth()) {
+				if (l==this.l) {
+					return this;
+				} else if (l.depth()>this.l.depth()) {
 					//The tree has just grown
 					//split ourself into a new Node2.
 					return new Node2<>(
@@ -453,6 +459,8 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 								mk,
 								new Node2<>(mr, k2, r)
 						);
+					} else if (m==this.m) {
+						return this;
 					} else {
 						//Tree remained same size
 						return new Node3<>(l, k1, m, k2, r);
@@ -468,6 +476,8 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 								k2,
 								r
 						);
+					} else if (r==this.r) {
+						return this;
 					} else {
 						//Tree remained same size
 						return new Node3<>(l, k1, m, k2, r);

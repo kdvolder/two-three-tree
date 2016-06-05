@@ -1,9 +1,11 @@
 package com.github.kdvolder.tttree.test;
 
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.github.kdvolder.tttree.TTTMap;
 import com.github.kdvolder.tttree.TTTree;
 import com.google.common.collect.ImmutableSortedMap;
 
@@ -30,6 +32,7 @@ public abstract class MutableMap<K extends Comparable<K>, V> {
 	public abstract Iterator<Entry<K, V>> iterator();
 	public abstract void dump();
 	public abstract boolean isEmpty();
+	public abstract Map<K, V> asImmutableMap();
 
 	public static <K extends Comparable<K>, V> MutableMap<K, V> from(ImmutableSortedMap<K, V> _map) {
 		return new MutableMap<K, V>() {
@@ -75,16 +78,20 @@ public abstract class MutableMap<K extends Comparable<K>, V> {
 			public boolean isEmpty() {
 				return map.isEmpty();
 			}
+
+			@Override
+			public Map<K, V> asImmutableMap() {
+				return map;
+			}
 		};
 	}
 
-
-	public static <K extends Comparable<K>, V> MutableMap<K, V> from(TTTree<K, V> _map) {
+	public static <K extends Comparable<K>, V> MutableMap<K, V> from(TTTMap<K, V> _map) {
 		return new MutableMap<K, V>() {
-			TTTree<K, V> map = _map;
+			TTTMap<K, V> map = _map;
 			@Override
 			public void put(K k, V v) {
-				map = map.put(k, v);
+				map = map.insert(k, v);
 			}
 
 			@Override
@@ -94,7 +101,7 @@ public abstract class MutableMap<K extends Comparable<K>, V> {
 
 			@Override
 			public void remove(K k) {
-				map = map.remove(k);
+				map = map.delete(k);
 			}
 
 			@Override
@@ -104,7 +111,7 @@ public abstract class MutableMap<K extends Comparable<K>, V> {
 
 			@Override
 			public Iterator<Entry<K, V>> iterator() {
-				return map.iterator();
+				return map.entrySet().iterator();
 			}
 
 			@Override
@@ -116,7 +123,15 @@ public abstract class MutableMap<K extends Comparable<K>, V> {
 			public boolean isEmpty() {
 				return map.isEmpty();
 			}
+
+			@Override
+			public Map<K, V> asImmutableMap() {
+				return map;
+			}
 		};
+	}
+	public static <K extends Comparable<K>, V> MutableMap<K, V> from(TTTree<K, V> map) {
+		return from(new TTTMap<>(map));
 	}
 
 }
