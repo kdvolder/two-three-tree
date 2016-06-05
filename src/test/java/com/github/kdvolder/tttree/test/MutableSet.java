@@ -1,6 +1,7 @@
 package com.github.kdvolder.tttree.test;
 
 import java.util.Iterator;
+import java.util.Set;
 
 import com.github.kdvolder.tttree.TTTSet;
 
@@ -15,6 +16,8 @@ public abstract class MutableSet<E> implements Iterable<E> {
 	public abstract void remove(E e);
 	public abstract void dump();
 	public abstract boolean isEmpty();
+	public abstract int size();
+	public abstract Set<E> asImmutableSet();
 
 	public static <E extends Comparable<E>> MutableSet<E> from(TTTSet<E> immutableSet) {
 		return new MutableSet<E>() {
@@ -43,14 +46,22 @@ public abstract class MutableSet<E> implements Iterable<E> {
 
 			@Override
 			public void dump() {
-				// TODO Auto-generated method stub
-
+				set.dump();
 			}
 
 			@Override
 			public boolean isEmpty() {
-				// TODO Auto-generated method stub
-				return false;
+				return set.isEmpty();
+			}
+
+			@Override
+			public int size() {
+				return set.size();
+			}
+
+			@Override
+			public Set<E> asImmutableSet() {
+				return set;
 			}
 		};
 	}

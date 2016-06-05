@@ -68,4 +68,8 @@ public class TTTSet<E extends Comparable<E>> extends AbstractSet<E> {
 		return new TTTSet<>(copy);
 	}
 
+	public void dump() {
+		map.dump();
+	}
+
 }
