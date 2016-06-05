@@ -42,6 +42,16 @@ public class TTTSetTest extends RandomTestUtils {
 	}
 
 	@Test
+	public void noUnneededCopyOnInsert() {
+		MutableSet<String> set = createEmptySet();
+		set.add("Hello");
+
+		Set<String> before = set.asImmutableSet();
+		set.add("Hello");
+		assertTrue(before==set.asImmutableSet());
+	}
+
+	@Test
 	public void randomOperations() {
 		int DATA_RANGE = 90;
 		int DATA_SIZE = 100; //Size > range ensures some duplicates

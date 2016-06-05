@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 
@@ -179,16 +180,21 @@ public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map
 		@Override
 		public TTTree<K, V> put(K ik, V iv) {
 			int compare = ik.compareTo(k);
-			TTTree<K, V> newLeaf = leaf(ik, iv);
 			if (compare==0) {
 				// ik == k
-				return newLeaf;
-			} else if (compare<0) {
-				// ik < k
-				return new Node2<>(newLeaf, ik, this);
+				if (Objects.equals(v, iv)) {
+					return this;
+				}
+				return leaf(ik, iv);
 			} else {
-				// ik > k
-				return new Node2<>(this, k, newLeaf);
+				TTTree<K, V> newLeaf = leaf(ik, iv);
+				if (compare<0) {
+					// ik < k
+					return new Node2<>(newLeaf, ik, this);
+				} else {
+					// ik > k
+					return new Node2<>(this, k, newLeaf);
+				}
 			}
 		}
 
