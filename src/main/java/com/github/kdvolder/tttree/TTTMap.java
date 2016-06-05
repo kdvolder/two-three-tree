@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A {@link TTTMap} wraps a {@link TTTree} adapting it to provide
+ * An instance of this class wraps a {@link TTTree} adapting it to provide
  * a standard immutable {@link Map} implementation.
  * <p>
  * TODO: maybe this wrapper can be avoided if TTTree directly implements / subclasses

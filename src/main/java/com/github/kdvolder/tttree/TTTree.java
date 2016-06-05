@@ -16,13 +16,13 @@ import com.google.common.collect.Iterators;
  * A 'map-like' data structure implemented by means of a Two-Three Tree.
  * <p>
  * Map-like means, it implements an interface similar to java.util.Map, but it
- * doesn't formally implement the java.util.Map interface.
+ * doesn't formally implement the actual java.util.Map interface.
  * <p>
  * If you don't mind the 'non-standard' interface you can use TTTree directly from
  * your code. However, if you prefer something that formally implements java.util.Map
  * you can wrap it in a {@link TTTMap} adapter.
  */
-public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map.Entry<K, V>>{
+public abstract class TTTree<K extends Comparable<K>, V> implements Iterable<Map.Entry<K, V>> {
 
 	////////////////////////////////////
 	// public api
