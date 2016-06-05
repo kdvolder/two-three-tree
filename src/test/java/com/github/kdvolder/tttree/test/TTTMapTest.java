@@ -38,29 +38,26 @@ public class TTTMapTest extends AbstractMapTestTemplate {
 
 	@Test
 	public void noUnneededCopiesOnInsertAndRemove() {
-		doNoisy(() -> {
-			Integer[] data = randomInts(1000, 900);
-			MutableMap<Integer, String> map = createEmptyMap();
-			for (Integer k : data) {
-				println("put("+k+", \""+k+"\");");
-				map.put(k, ""+k);
+		Integer[] data = randomInts(1000, 900);
+		MutableMap<Integer, String> map = createEmptyMap();
+		for (Integer k : data) {
+			map.put(k, ""+k);
 
-				Map<Integer, String> before = map.asImmutableMap();
-				map.put(k, ""+k);
-				Map<Integer, String> after = map.asImmutableMap();
-				assertTrue(before==after);
-			}
+			Map<Integer, String> before = map.asImmutableMap();
+			map.put(k, ""+k);
+			Map<Integer, String> after = map.asImmutableMap();
+			assertTrue(before==after);
+		}
 
-			for (Integer k : data) {
-				map.remove(k);
+		for (Integer k : data) {
+			map.remove(k);
 
-				Map<Integer, String> before = map.asImmutableMap();
-				map.remove(k);
-				Map<Integer, String> after = map.asImmutableMap();
+			Map<Integer, String> before = map.asImmutableMap();
+			map.remove(k);
+			Map<Integer, String> after = map.asImmutableMap();
 
-				assertTrue(before==after);
-			}
-		});
+			assertTrue(before==after);
+		}
 	}
 
 	@Override
