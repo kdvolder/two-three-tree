@@ -34,8 +34,13 @@ public class TTTMap<K extends Comparable<K>, V> extends AbstractMap<K, V> {
 		return new AbstractSet<Entry<K,V>>() {
 
 			@Override
-			public Iterator<java.util.Map.Entry<K, V>> iterator() {
+			public Iterator<Entry<K, V>> iterator() {
 				return map.iterator();
+			}
+
+			@Override
+			public boolean isEmpty() {
+				return TTTMap.this.isEmpty();
 			}
 
 			@Override
@@ -43,6 +48,11 @@ public class TTTMap<K extends Comparable<K>, V> extends AbstractMap<K, V> {
 				return TTTMap.this.size();
 			}
 		};
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return map.isEmpty();
 	}
 
 	@Override
