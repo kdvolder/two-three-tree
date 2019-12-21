@@ -24,7 +24,7 @@
 		<dependency>
 			<groupId>com.github.kdvolder</groupId>
 			<artifactId>misc-util</artifactId>
-			<version>0.0.1-M2</version>
+			<version>0.0.2-RELEASE</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.guava</groupId>
