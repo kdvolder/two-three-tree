@@ -72,4 +72,23 @@ public class TTTSet<E extends Comparable<E>> extends AbstractSet<E> {
 		map.dump();
 	}
 
+	@SafeVarargs
+	public static <T extends Comparable<T>> TTTSet<T> of(T... elements) {
+		TTTSet<T> set = new TTTSet<>();
+		for (T e : elements) {
+			set = set.insert(e);
+		}
+		return set;
+	}
+
+	public TTTSet<E> union(TTTSet<E> other) {
+		if (this.size() < other.size()) {
+			return other.union(this);
+		}
+		TTTSet<E> union = this;
+		for (E e : other) {
+			union = union.insert(e);
+		}
+		return union;
+	}
 }

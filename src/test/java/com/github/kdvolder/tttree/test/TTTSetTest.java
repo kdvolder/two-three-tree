@@ -23,6 +23,21 @@ public class TTTSetTest extends RandomTestUtils {
 	}
 
 	@Test
+	public void union() {
+		TTTSet<String> empty = TTTSet.of();
+		TTTSet<String> stuff = TTTSet.of("abc", "def");
+
+		assertEquals(empty.union(empty), empty);
+		assertEquals(empty.union(empty), TTTSet.<String>of());
+
+		assertEquals(stuff.union(stuff), stuff);
+		assertEquals(empty.union(stuff), stuff);
+		assertEquals(stuff.union(empty), stuff);
+
+		assertEquals(stuff.union(TTTSet.of("more", "stuff")), TTTSet.of("abc", "def", "more", "stuff"));
+	}
+
+	@Test
 	public void emptySet() {
 		MutableSet<String> set = createEmptySet();
 		assertEquals(0, set.size());
