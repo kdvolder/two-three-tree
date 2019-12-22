@@ -91,4 +91,17 @@ public class TTTSet<E extends Comparable<E>> extends AbstractSet<E> {
 		}
 		return union;
 	}
+
+	public TTTSet<E> intersection(TTTSet<E> other) {
+		if (other.size() < this.size()) {
+			return other.intersection(this);
+		}
+		TTTSet<E> intersection = TTTSet.of();
+		for (E e : this) {
+			if (other.contains(e)) {
+				intersection = intersection.insert(e);
+			}
+		}
+		return intersection;
+	}
 }

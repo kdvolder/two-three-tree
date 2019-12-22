@@ -34,7 +34,25 @@ public class TTTSetTest extends RandomTestUtils {
 		assertEquals(empty.union(stuff), stuff);
 		assertEquals(stuff.union(empty), stuff);
 
-		assertEquals(stuff.union(TTTSet.of("more", "stuff")), TTTSet.of("abc", "def", "more", "stuff"));
+		assertEquals(stuff.union(TTTSet.of("more", "stuff", "here")), TTTSet.of("abc", "def", "more", "stuff", "here"));
+		assertEquals(TTTSet.of("more", "stuff", "here").union(stuff), TTTSet.of("abc", "def", "more", "stuff", "here"));
+	}
+
+	@Test
+	public void intersection() {
+		TTTSet<String> empty = TTTSet.of();
+
+		TTTSet<String> seta = TTTSet.of("a", "b", "c", "d");
+		TTTSet<String> setb = TTTSet.of("b", "d", "f");
+
+		assertEquals(empty.intersection(empty), empty);
+		assertEquals(empty.intersection(empty), TTTSet.<String>of());
+
+		assertEquals(seta.intersection(seta), seta);
+		assertEquals(setb.intersection(setb), setb);
+
+		assertEquals(seta.intersection(setb), TTTSet.of("b", "d"));
+		assertEquals(setb.intersection(seta), TTTSet.of("b", "d"));
 	}
 
 	@Test
