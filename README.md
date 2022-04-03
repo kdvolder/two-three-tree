@@ -58,10 +58,10 @@ So why not just use that instead?
 The answer is, it depends on what you wanted to use it for.
 
 Guava's immutable sorted map is most similar to `TTTree`.
-So let's compare the two. Guava's immutables seem to optimized 
+So let's compare the two. Guava's immutables seem to be optimized 
 towards a compact representation of a *single* map instance. So 
 it's ideal if all you want is to keep a map containing some 'static' 
-data assigned to a constant forever. 
+data assigned to a constant forever.
 
 However, it performs rather poorly when you are interested 
 in making *modified* copies of this map. Essentially making a
